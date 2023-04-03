@@ -1,0 +1,17 @@
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+[Bb]in/
+[Oo]bj/
+
+# Click-Once directory
+publish/
+
+# Environment
+.env*
+!.env.example
+
+# Code coverage
+.coverage
+.coverage-report
