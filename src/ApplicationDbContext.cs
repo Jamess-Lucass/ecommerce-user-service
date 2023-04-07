@@ -20,11 +20,11 @@ public class ApplicationDbContext : DbContext
             switch (entry.State)
             {
                 case EntityState.Added:
-                    entry.Entity.CreatedAt = DateTime.Now;
+                    entry.Entity.CreatedAt = DateTime.UtcNow;
                     entry.Entity.CreatedBy = _user?.Id ?? Guid.Empty;
                     break;
                 case EntityState.Modified:
-                    entry.Entity.UpdatedAt = DateTime.Now;
+                    entry.Entity.UpdatedAt = DateTime.UtcNow;
                     entry.Entity.UpdatedBy = _user?.Id ?? Guid.Empty;
                     break;
             }
@@ -42,11 +42,11 @@ public class ApplicationDbContext : DbContext
             switch (entry.State)
             {
                 case EntityState.Added:
-                    entry.Entity.CreatedAt = DateTime.Now;
+                    entry.Entity.CreatedAt = DateTime.UtcNow;
                     entry.Entity.CreatedBy = _user?.Id ?? Guid.Empty;
                     break;
                 case EntityState.Modified:
-                    entry.Entity.UpdatedAt = DateTime.Now;
+                    entry.Entity.UpdatedAt = DateTime.UtcNow;
                     entry.Entity.UpdatedBy = _user?.Id ?? Guid.Empty;
                     break;
             }
