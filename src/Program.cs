@@ -217,26 +217,37 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
+    using (var scope = app.Services.CreateScope())
+    {
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await context.Database.EnsureCreatedAsync();
+    }
+
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 app.MapHealthChecks("/healthz");
 
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllers();
-
 app.Use(async (context, next) =>
 {
     await next();
 
-    if (context.Response.StatusCode == StatusCodes.Status404NotFound && !context.Response.HasStarted)
+    if (context.Response.StatusCode == StatusCodes.Status404NotFound)
     {
         await context.Response.WriteAsJsonAsync(new { code = 404, message = "No Resource Found" });
     }
+
+    if (context.Response.StatusCode == StatusCodes.Status401Unauthorized)
+    {
+        await context.Response.WriteAsJsonAsync(new { code = 401, message = "Not authenticated" });
+    }
 });
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
 
 app.Run();
 
