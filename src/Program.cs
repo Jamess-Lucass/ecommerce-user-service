@@ -217,6 +217,15 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
+    string origins = Environment.GetEnvironmentVariable("CORS_ORIGINS") ?? "";
+
+    app.UseCors(opt => opt
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .WithOrigins(origins.Split(","))
+        .AllowCredentials()
+    );
+
     using (var scope = app.Services.CreateScope())
     {
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
