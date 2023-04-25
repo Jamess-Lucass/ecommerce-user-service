@@ -1,0 +1,11 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: ecommerce-user-service-service
+spec:
+  selector:
+    app: ecommerce-user-service-deployment
+  ports:
+    - protocol: TCP
+      targetPort: 80
+      port: 80

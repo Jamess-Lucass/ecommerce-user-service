@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecommerce-user-service-deployment
+  labels:
+    app: ecommerce-user-service-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ecommerce-user-service-deployment
+  template:
+    metadata:
+      labels:
+        app: ecommerce-user-service-deployment
+    spec:
+      containers:
+        - name: ecommerce-user-service-container
+          image: ghcr.io/jamess-lucass/ecommerce-user-service:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 80
+          resources:
+            requests:
+              memory: 200Mi
+              cpu: 200m
+            limits:
+              memory: 400Mi
+              cpu: 400m
