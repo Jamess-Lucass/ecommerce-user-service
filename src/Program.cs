@@ -6,6 +6,7 @@ using Elastic.CommonSchema.Serilog;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.OData;
+using Microsoft.AspNetCore.OData.Query.Expressions;
 using Microsoft.AspNetCore.OData.Routing.Conventions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -32,17 +33,13 @@ builder.Services.AddControllers()
     options.RouteOptions.EnableUnqualifiedOperationCall = true;
     options.RouteOptions.EnableActionNameCaseInsensitive = true;
     options.Conventions.Remove(options.Conventions.OfType<MetadataRoutingConvention>().First());
+    options.TimeZone = TimeZoneInfo.Utc;
 
-    options.Count()
-        .Filter()
-        .Expand()
-        .Select()
-        .OrderBy()
-        .SetMaxTop(1_000);
+    options.EnableQueryFeatures(1_000);
 });
 builder.Services.AddProblemDetails();
 builder.Services.AddApiVersioning(opt => opt.ReportApiVersions = true)
-.AddOData(options => options.AddRouteComponents("api/v{version:apiVersion}"))
+.AddOData(options => options.AddRouteComponents("api/v{version:apiVersion}", services => services.AddSingleton<ISearchBinder, UserSearchBinder>()))
 .AddODataApiExplorer(options =>
 {
     options.MetadataOptions = ODataMetadataOptions.None;
@@ -240,16 +237,19 @@ app.MapHealthChecks("/healthz");
 
 app.Use(async (context, next) =>
 {
-    await next();
+    context.Request.Headers.Add("Prefer", "return=representation");
 
-    if (context.Response.StatusCode == StatusCodes.Status404NotFound)
+    try
     {
-        await context.Response.WriteAsJsonAsync(new { code = 404, message = "No Resource Found" });
+        await next();
     }
-
-    if (context.Response.StatusCode == StatusCodes.Status401Unauthorized)
+    catch (Exception ex)
     {
-        await context.Response.WriteAsJsonAsync(new { code = 401, message = "Not authenticated" });
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, ex.Message);
+
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        await context.Response.WriteAsJsonAsync(new { code = 500, message = "Unexpected error occurred, please try again or contact support" });
     }
 });
 

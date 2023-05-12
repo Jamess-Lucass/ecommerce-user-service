@@ -2,9 +2,11 @@
 FROM mcr.microsoft.com/dotnet/sdk:7.0-alpine AS builder
 
 WORKDIR /src
-COPY ./src .
+COPY ./src/*.csproj .
+RUN dotnet restore
 
-RUN dotnet publish user-service.csproj -c Release -o /app
+COPY ./src .
+RUN dotnet publish user-service.csproj --no-restore -c Release -o /app
 
 # Final
 FROM mcr.microsoft.com/dotnet/aspnet:7.0-alpine AS final

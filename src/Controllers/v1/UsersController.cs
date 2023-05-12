@@ -33,7 +33,8 @@ public class UsersController : BaseODataController
     // GET: /api/v1/users
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<UserDto>), Status200OK)]
-    [EnableQuery]
+    [EnableQuery(PageSize = 1_000)]
+    [RoleAuthorizeAttribute(Role.Employee, Role.Administrator)]
     public ActionResult Get()
     {
         return Ok(_userService.GetAllUsers());
@@ -44,6 +45,7 @@ public class UsersController : BaseODataController
     [ProducesResponseType(typeof(UserDto), Status200OK)]
     [ProducesResponseType(typeof(NotFoundResult), Status404NotFound)]
     [EnableQuery]
+    [RoleAuthorizeAttribute(Role.Employee, Role.Administrator)]
     public ActionResult<UserDto> Get(Guid key)
     {
         var user = _userService.GetAllUsers()
@@ -63,6 +65,7 @@ public class UsersController : BaseODataController
     [ProducesResponseType(typeof(UserDto), Status201Created)]
     [ProducesResponseType(Status400BadRequest)]
     [EnableQuery(AllowedQueryOptions = AllowedQueryOptions.None)]
+    [RoleAuthorizeAttribute(Role.Administrator)]
     public async Task<ActionResult<UserDto>> Post([FromBody] CreateUserRequest request, [FromServices] IValidator<CreateUserRequest> validator)
     {
         var result = validator.Validate(request);
@@ -100,6 +103,7 @@ public class UsersController : BaseODataController
     [ProducesResponseType(Status400BadRequest)]
     [ProducesResponseType(Status404NotFound)]
     [EnableQuery(AllowedQueryOptions = AllowedQueryOptions.None)]
+    [RoleAuthorizeAttribute(Role.Administrator)]
     public async Task<ActionResult<UserDto>> Put([FromRoute] Guid key, [FromBody] UpdateUserRequest request, [FromServices] IValidator<UpdateUserRequest> validator)
     {
         var result = validator.Validate(request);
@@ -129,5 +133,29 @@ public class UsersController : BaseODataController
         await _context.SaveChangesAsync();
 
         return Updated(_mapper.Map<UserDto>(user));
+    }
+
+    // DELETE: /api/v1/products/1
+    [HttpDelete]
+    [MapToApiVersion(1.0)]
+    [ProducesResponseType(typeof(NoContentResult), Status204NoContent)]
+    [ProducesResponseType(Status404NotFound)]
+    [EnableQuery(AllowedQueryOptions = AllowedQueryOptions.None)]
+    [RoleAuthorizeAttribute(Role.Administrator)]
+    public async Task<ActionResult> Delete([FromRoute] Guid key)
+    {
+        var product = _context.Users.Where(x => !x.IsDeleted)
+            .FirstOrDefault(x => x.Id == key);
+
+        if (product is null)
+        {
+            return NotFound("Product not found");
+        }
+
+        product.IsDeleted = true;
+
+        await _context.SaveChangesAsync();
+
+        return NoContent();
     }
 }

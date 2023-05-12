@@ -14,7 +14,7 @@ Console.WriteLine($"Connecting to database {dbName} on server {dbHost},{dbPort} 
 string connectionString = $"Server={dbHost},{dbPort};Database={dbName};User={dbUsername};Password={dbPassword};MultipleActiveResultSets=true;TrustServerCertificate=true";
 
 var options = new DbContextOptionsBuilder<ApplicationDbContext>();
-options.UseSqlServer(connectionString);
+options.UseSqlServer(connectionString).UseSnakeCaseNamingConvention();
 
 using (var context = new ApplicationDbContext(options.Options))
 {
@@ -29,9 +29,10 @@ using (var context = new ApplicationDbContext(options.Options))
     var users = new Faker<User>()
         .RuleFor(x => x.Firstname, f => f.Person.FirstName)
         .RuleFor(x => x.Lastname, f => f.Person.LastName)
-        .RuleFor(x => x.Email, f => f.Person.Email);
+        .RuleFor(x => x.Email, f => f.Person.Email)
+        .RuleFor(x => x.AvatarUrl, f => f.Internet.Avatar());
 
-    context.Users.AddRange(users.Generate(100));
+    context.Users.AddRange(users.Generate(100_000));
 
     context.SaveChanges();
 

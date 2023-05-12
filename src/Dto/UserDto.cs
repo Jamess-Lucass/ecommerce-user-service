@@ -13,8 +13,9 @@ public record UserDto
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public UserStatus Status { get; set; }
+
     public DateTime CreatedAt { get; set; }
     public Guid CreatedBy { get; set; }
-    public DateTime UpdatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
     public Guid UpdatedBy { get; set; }
 }
