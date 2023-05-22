@@ -2,10 +2,24 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Xunit;
+using Testcontainers.MsSql;
 
 public class TestWebApplicationFactory<TProgram>
-    : WebApplicationFactory<TProgram> where TProgram : class
+    : WebApplicationFactory<TProgram>, IAsyncLifetime where TProgram : class
 {
+    private readonly MsSqlContainer _databaseContainer = new MsSqlBuilder().Build();
+
+    public Task InitializeAsync()
+    {
+        return _databaseContainer.StartAsync();
+    }
+
+    public new Task DisposeAsync()
+    {
+        return _databaseContainer.DisposeAsync().AsTask();
+    }
+
     protected override IHost CreateHost(IHostBuilder builder)
     {
         builder.ConfigureServices(services =>
@@ -17,13 +31,9 @@ public class TestWebApplicationFactory<TProgram>
                 services.Remove(descriptor);
             }
 
-            var folder = Environment.SpecialFolder.LocalApplicationData;
-            var path = Environment.GetFolderPath(folder);
-            var dbPath = Path.Join(path, "test.db");
-
             services.AddDbContext<ApplicationDbContext>(options =>
             {
-                options.UseSqlite($"Data Source={dbPath}");
+                options.UseSqlServer(_databaseContainer.GetConnectionString());
             });
         });
 

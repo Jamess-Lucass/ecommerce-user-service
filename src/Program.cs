@@ -1,20 +1,14 @@
 using System.Reflection;
 using System.Text;
 using API.Services;
-using Asp.Versioning.ApiExplorer;
 using Elastic.CommonSchema.Serilog;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.OData;
-using Microsoft.AspNetCore.OData.Query.Expressions;
-using Microsoft.AspNetCore.OData.Routing.Conventions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using Serilog.Events;
-using Swashbuckle.AspNetCore.SwaggerGen;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,29 +18,8 @@ var dbName = Environment.GetEnvironmentVariable("DB_NAME");
 var dbUsername = Environment.GetEnvironmentVariable("DB_USERNAME");
 var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD");
 
-builder.Services.AddControllers()
-.AddOData(options =>
-{
-    options.RouteOptions.EnableKeyInParenthesis = false;
-    options.RouteOptions.EnableNonParenthesisForEmptyParameterFunction = true;
-    options.RouteOptions.EnableQualifiedOperationCall = false;
-    options.RouteOptions.EnableUnqualifiedOperationCall = true;
-    options.RouteOptions.EnableActionNameCaseInsensitive = true;
-    options.Conventions.Remove(options.Conventions.OfType<MetadataRoutingConvention>().First());
-    options.TimeZone = TimeZoneInfo.Utc;
-
-    options.EnableQueryFeatures(1_000);
-});
+builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
-builder.Services.AddApiVersioning(opt => opt.ReportApiVersions = true)
-.AddOData(options => options.AddRouteComponents("api/v{version:apiVersion}", services => services.AddSingleton<ISearchBinder, UserSearchBinder>()))
-.AddODataApiExplorer(options =>
-{
-    options.MetadataOptions = ODataMetadataOptions.None;
-    options.GroupNameFormat = "'v'VVV";
-    options.SubstituteApiVersionInUrl = true;
-});
-
 string connectionString = $"Server={dbHost},{dbPort};Database={dbName};User={dbUsername};Password={dbPassword};MultipleActiveResultSets=true;TrustServerCertificate=true";
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -66,9 +39,10 @@ builder.Services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
 builder.Services.AddCors();
 
-builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
 builder.Services.AddSwaggerGen(options =>
 {
+    options.OperationFilter<GoatQueryOpenAPIFilter>();
+
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
     {
         Name = "Authorization",
@@ -174,13 +148,14 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IValidator<CreateUserRequest>, CreateUserRequestValidator>();
 builder.Services.AddScoped<IValidator<UpdateUserRequest>, UpdateUserRequestValidator>();
 
+// Search
+builder.Services.AddSingleton<ISearchBinder<UserDto>, UserSearchBinder>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
-
-    app.UseODataRouteDebug();
 
     app.UseCors(opt => opt
         .AllowAnyHeader()
@@ -195,14 +170,6 @@ if (app.Environment.IsDevelopment())
         options.DocumentTitle = "User Service - Swagger UI";
 
         options.DisplayRequestDuration();
-
-        var descriptions = app.DescribeApiVersions();
-        foreach (var description in descriptions)
-        {
-            var url = $"/swagger/{description.GroupName}/swagger.json";
-            var name = description.GroupName.ToUpperInvariant();
-            options.SwaggerEndpoint(url, name);
-        }
     });
 
     using (var scope = app.Services.CreateScope())
@@ -237,8 +204,6 @@ app.MapHealthChecks("/healthz");
 
 app.Use(async (context, next) =>
 {
-    context.Request.Headers.Add("Prefer", "return=representation");
-
     try
     {
         await next();

@@ -1,26 +1,15 @@
 using System.Linq.Expressions;
-using Microsoft.AspNetCore.OData.Query.Expressions;
-using Microsoft.OData.UriParser;
 
-public class UserSearchBinder : QueryBinder, ISearchBinder
+public class UserSearchBinder : ISearchBinder<UserDto>
 {
-    public Expression BindSearch(SearchClause searchClause, QueryBinderContext context)
+    public Expression<Func<UserDto, bool>> Bind(string searchTerm)
     {
-        SearchTermNode? node = searchClause.Expression as SearchTermNode;
-
-        if (node is null)
-        {
-            Expression<Func<UserDto, bool>> expression = p => true;
-
-            return expression;
-        }
-
-        var searchTerm = node.Text.ToLower();
+        var text = searchTerm.ToLower();
 
         Expression<Func<UserDto, bool>> exp = p =>
-            p.Email.ToLower().Contains(searchTerm) ||
-            p.FirstName.ToLower().Contains(searchTerm) ||
-            p.LastName.ToLower().Contains(searchTerm);
+            p.Email.ToLower().Contains(text) ||
+            p.FirstName.ToLower().Contains(text) ||
+            p.LastName.ToLower().Contains(text);
 
         return exp;
     }

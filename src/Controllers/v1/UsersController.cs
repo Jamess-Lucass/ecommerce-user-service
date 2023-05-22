@@ -1,14 +1,12 @@
-using Asp.Versioning;
 using AutoMapper;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.OData.Query;
 using static Microsoft.AspNetCore.Http.StatusCodes;
 
 namespace API.Controllers.v1;
 
-[ApiVersion(1.0)]
-public class UsersController : BaseODataController
+[Route("api/v1/[controller]")]
+public class UsersController : BaseController
 {
     private readonly ApplicationDbContext _context;
     private readonly IUserService _userService;
@@ -33,23 +31,22 @@ public class UsersController : BaseODataController
     // GET: /api/v1/users
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<UserDto>), Status200OK)]
-    [EnableQuery(PageSize = 1_000)]
+    [EnableQuery<UserDto>(1_000)]
     [RoleAuthorizeAttribute(Role.Employee, Role.Administrator)]
-    public ActionResult Get()
+    public ActionResult GetAll()
     {
         return Ok(_userService.GetAllUsers());
     }
 
     // GET: /api/v1/users/1
-    [HttpGet]
+    [HttpGet("{id}")]
     [ProducesResponseType(typeof(UserDto), Status200OK)]
     [ProducesResponseType(typeof(NotFoundResult), Status404NotFound)]
-    [EnableQuery]
     [RoleAuthorizeAttribute(Role.Employee, Role.Administrator)]
-    public ActionResult<UserDto> Get(Guid key)
+    public ActionResult<UserDto> Get(Guid id)
     {
         var user = _userService.GetAllUsers()
-            .FirstOrDefault(x => x.Id == key);
+            .FirstOrDefault(x => x.Id == id);
 
         if (user is null)
         {
@@ -61,10 +58,8 @@ public class UsersController : BaseODataController
 
     // POST: /api/v1/users
     [HttpPost]
-    [MapToApiVersion(1.0)]
     [ProducesResponseType(typeof(UserDto), Status201Created)]
     [ProducesResponseType(Status400BadRequest)]
-    [EnableQuery(AllowedQueryOptions = AllowedQueryOptions.None)]
     [RoleAuthorizeAttribute(Role.Administrator)]
     public async Task<ActionResult<UserDto>> Post([FromBody] CreateUserRequest request, [FromServices] IValidator<CreateUserRequest> validator)
     {
@@ -97,14 +92,12 @@ public class UsersController : BaseODataController
     }
 
     // PUT: /api/v1/users/1
-    [HttpPut]
-    [MapToApiVersion(1.0)]
+    [HttpPut("{id}")]
     [ProducesResponseType(typeof(UserDto), Status200OK)]
     [ProducesResponseType(Status400BadRequest)]
     [ProducesResponseType(Status404NotFound)]
-    [EnableQuery(AllowedQueryOptions = AllowedQueryOptions.None)]
     [RoleAuthorizeAttribute(Role.Administrator)]
-    public async Task<ActionResult<UserDto>> Put([FromRoute] Guid key, [FromBody] UpdateUserRequest request, [FromServices] IValidator<UpdateUserRequest> validator)
+    public async Task<ActionResult<UserDto>> Put([FromRoute] Guid id, [FromBody] UpdateUserRequest request, [FromServices] IValidator<UpdateUserRequest> validator)
     {
         var result = validator.Validate(request);
         if (!result.IsValid)
@@ -113,7 +106,7 @@ public class UsersController : BaseODataController
             return ValidationProblem(ModelState);
         }
 
-        var user = _context.Users.Find(key);
+        var user = _context.Users.Find(id);
 
         if (user is null)
         {
@@ -132,20 +125,18 @@ public class UsersController : BaseODataController
 
         await _context.SaveChangesAsync();
 
-        return Updated(_mapper.Map<UserDto>(user));
+        return Ok(_mapper.Map<UserDto>(user));
     }
 
     // DELETE: /api/v1/products/1
-    [HttpDelete]
-    [MapToApiVersion(1.0)]
+    [HttpDelete("{id}")]
     [ProducesResponseType(typeof(NoContentResult), Status204NoContent)]
     [ProducesResponseType(Status404NotFound)]
-    [EnableQuery(AllowedQueryOptions = AllowedQueryOptions.None)]
     [RoleAuthorizeAttribute(Role.Administrator)]
-    public async Task<ActionResult> Delete([FromRoute] Guid key)
+    public async Task<ActionResult> Delete([FromRoute] Guid id)
     {
         var product = _context.Users.Where(x => !x.IsDeleted)
-            .FirstOrDefault(x => x.Id == key);
+            .FirstOrDefault(x => x.Id == id);
 
         if (product is null)
         {
