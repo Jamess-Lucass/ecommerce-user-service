@@ -42,7 +42,6 @@ public class UsersController : BaseController
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(UserDto), Status200OK)]
     [ProducesResponseType(typeof(NotFoundResult), Status404NotFound)]
-    [RoleAuthorizeAttribute(Role.Employee, Role.Administrator)]
     public ActionResult<UserDto> Get(Guid id)
     {
         var user = _userService.GetAllUsers()

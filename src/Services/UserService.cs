@@ -19,8 +19,15 @@ public class UserService : IUserService
 
     public IQueryable<UserDto> GetAllUsers()
     {
+        if (_user.Role is Role.Administrator or Role.Employee)
+        {
+            return _context.Users.AsNoTracking()
+                .Where(x => !x.IsDeleted)
+                .ProjectTo<UserDto>(_mapper.ConfigurationProvider);
+        }
+
         return _context.Users.AsNoTracking()
-            .Where(x => !x.IsDeleted)
+            .Where(x => !x.IsDeleted && x.Id == _user.Id)
             .ProjectTo<UserDto>(_mapper.ConfigurationProvider);
     }
 }
