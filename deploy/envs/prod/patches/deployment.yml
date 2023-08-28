@@ -1,33 +1,30 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ecommerce-user-service-deployment
+  name: ecommerce-user-service
 spec:
   template:
     spec:
       containers:
-        - name: ecommerce-user-service-container
+        - name: ecommerce-user-service
           env:
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: jwt-secret
-                  key: value
+                  name: ecommerce-user-service
+                  key: jwt_secret
             - name: CORS_ORIGINS
               value: "https://internal.jameslucas.uk"
             - name: DB_HOST
-              value: ecommerce-user-service-mssql-service.default.svc
+              value: ecommerce-user-service-mssql.default.svc
             - name: DB_PORT
               value: "1433"
             - name: DB_NAME
               value: user
             - name: DB_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: ecommerce-user-service-mssql-credentials
-                  key: username
+              value: sa
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: ecommerce-user-service-mssql-credentials
-                  key: password
+                  name: ecommerce-user-service
+                  key: mssql_password

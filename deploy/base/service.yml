@@ -1,10 +1,10 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: ecommerce-user-service-service
+  name: ecommerce-user-service
 spec:
   selector:
-    app: ecommerce-user-service-deployment
+    app: ecommerce-user-service
   ports:
     - protocol: TCP
       targetPort: 80

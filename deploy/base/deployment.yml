@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ecommerce-user-service-deployment
+  name: ecommerce-user-service
   labels:
-    app: ecommerce-user-service-deployment
+    app: ecommerce-user-service
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ecommerce-user-service-deployment
+      app: ecommerce-user-service
   template:
     metadata:
       labels:
-        app: ecommerce-user-service-deployment
+        app: ecommerce-user-service
     spec:
       containers:
-        - name: ecommerce-user-service-container
+        - name: ecommerce-user-service
           image: ghcr.io/jamess-lucass/ecommerce-user-service:latest
           imagePullPolicy: Always
           ports:
