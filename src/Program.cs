@@ -200,7 +200,7 @@ else
 }
 
 app.UseHttpsRedirection();
-app.MapHealthChecks("/healthz");
+app.MapHealthChecks("/api/healthz");
 
 app.Use(async (context, next) =>
 {
