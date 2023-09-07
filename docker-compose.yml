@@ -6,6 +6,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    labels:
+      logging/enabled: "true"
     container_name: ecommerce-user-service
     ports:
       - 1001:80
@@ -17,6 +19,10 @@ services:
       - DB_PASSWORD=Password123
       - JWT_SECRET=DockerTestJWTFakeSecret
       - ASPNETCORE_ENVIRONMENT=Development
+      - ELASTIC_APM_SERVER_URL=http://host.docker.internal:8200
+      - ELASTIC_APM_SERVICE_NAME=user-service
+      - ELASTIC_APM_EXIT_SPAN_MIN_DURATION=1us
+      - ELASTIC_APM_CAPTURE_BODY=all
     depends_on:
       - db
     restart: on-failure

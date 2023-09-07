@@ -1,6 +1,8 @@
 using System.Reflection;
 using System.Text;
 using API.Services;
+using Elastic.Apm.NetCoreAll;
+using Elastic.Apm.SerilogEnricher;
 using Elastic.CommonSchema.Serilog;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -74,20 +76,11 @@ builder.Logging.ClearProviders();
 
 builder.Host.UseSerilog((hostContext, services, configuration) =>
 {
-    if (builder.Environment.IsDevelopment())
-    {
-        configuration
-        .MinimumLevel.Debug()
-        .MinimumLevel.Override("Microsoft.Extensions.Http.DefaultHttpClientFactory", LogEventLevel.Information)
-        .WriteTo.Console();
-    }
-    else
-    {
-        configuration
-        .MinimumLevel.Debug()
-        .MinimumLevel.Override("Microsoft.Extensions.Http.DefaultHttpClientFactory", LogEventLevel.Information)
-        .WriteTo.Console(new EcsTextFormatter());
-    }
+    configuration
+    .Enrich.WithElasticApmCorrelationInfo()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft.Extensions.Http.DefaultHttpClientFactory", LogEventLevel.Information)
+    .WriteTo.Console(new EcsTextFormatter());
 });
 
 builder.Services.AddHealthChecks().AddDbContextCheck<ApplicationDbContext>();
@@ -152,6 +145,8 @@ builder.Services.AddScoped<IValidator<UpdateUserRequest>, UpdateUserRequestValid
 builder.Services.AddSingleton<ISearchBinder<UserDto>, UserSearchBinder>();
 
 var app = builder.Build();
+
+app.UseAllElasticApm();
 
 if (app.Environment.IsDevelopment())
 {
