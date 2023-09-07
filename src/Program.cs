@@ -199,6 +199,9 @@ app.MapHealthChecks("/api/healthz");
 
 app.Use(async (context, next) =>
 {
+    var transaction = Elastic.Apm.Agent.Tracer.CurrentTransaction;
+    context.Response.Headers.TryAdd("x-elastic-trace-id", transaction.TraceId);
+
     try
     {
         await next();
